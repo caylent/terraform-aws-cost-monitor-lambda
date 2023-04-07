@@ -1,13 +1,7 @@
-variable "region" {
-  description = "AWS region"
-  type        = string
-  default     = "us-east-1"
-}
-
 variable "frequency" {
   description = "number of days to run the lambda"
   type        = string
-  default     = "rate(1 minute)"
+  default     = "rate(1 day)"
 }
 
 variable "name" {
@@ -19,5 +13,20 @@ variable "name" {
 variable "image_uri" {
   description = "URI of the repo where the lambda image is stored"
   type = string
-  default = "public.ecr.aws/lambda/python:3.8" #basic lambda image. Change it to the ECR URI once the code is pushed to ECR
+}
+
+variable "encripted_slack_webhook_url"{
+  description = "encript the webhook URL with KMS, and use it in this variable. See readme.md"
+  type = string
+}
+
+variable "alert_threshold" {
+  description = "integer represeting the % above which alerts will be sent to slack"
+  type = number
+}
+
+variable "alerts_only" {
+  description = "the lambda will only post messages if a threshold is exceeded"
+  type = bool
+  default = true
 }

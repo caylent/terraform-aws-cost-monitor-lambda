@@ -1,15 +1,16 @@
-#lambda
-#secret manager
-# event bridge trigger
-
 resource "aws_lambda_function" "cost_alert" {
   function_name = var.name
   role          = aws_iam_role.iam_for_lambda.arn
   package_type  = "Image"
-  image_uri     = "081291135487.dkr.ecr.us-east-1.amazonaws.com/cost_lambda:latest"
-  depends_on = [
-    aws_ecr_repository.ecr_repo
-  ]
+  image_uri     = var.image_uri
+  
+  environment {
+    variables = {
+      "alert_threshold" = var.alert_threshold
+      "slack_webhook_url" = data.aws_kms_secrets.secret_value.plaintext["slack_webhook_url"]
+      "alerts_only" = var.alerts_only
+    }
+  }
 }
 
 data "aws_iam_policy_document" "assume_role" {
@@ -44,7 +45,9 @@ data "aws_iam_policy_document" "inline_policy" {
       "ce:GetCostAndUsage",
       "ce:ListCostCategoryDefinitions",
       "ce:GetCostForecast",
-      "secretsmanager:GetSecretValue"
+      "logs:CreateLogGroup",
+      "logs:CreateLogStream",
+      "logs:PutLogEvents"
       ]
     resources = ["*"]
   }
@@ -69,11 +72,4 @@ resource "aws_lambda_permission" "allow_events_bridge_to_run_lambda" {
   function_name = aws_lambda_function.cost_alert.function_name
   principal     = "events.amazonaws.com"
   source_arn    = aws_cloudwatch_event_rule.lambda_trigger.arn
-}
-
-resource "aws_ecr_repository" "ecr_repo" {
-  name         = var.name
-  image_scanning_configuration {
-    scan_on_push = true
-  }
 }

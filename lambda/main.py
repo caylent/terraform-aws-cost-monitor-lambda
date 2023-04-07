@@ -4,15 +4,19 @@ import boto3
 import calendar
 import pytz
 import json
+import logging
 from slack_sdk.webhook import WebhookClient
 from datetime import date, timedelta, datetime
 from botocore.exceptions import ClientError
+from os import environ
 
 session = boto3.session.Session()
 
+
 def get_config():
-    with open('config.yml', 'r') as f:
-        return yaml.safe_load(f)
+    return {'alerts_only': str(environ['alerts_only']), 
+       'slack_webhook_url':str(environ['slack_webhook_url']), 
+       'alert_threshold': float(environ['alert_threshold'])}
 
 def get_cost():
     utc = pytz.UTC
@@ -40,7 +44,9 @@ def get_cost():
     )
 
     previous_month_cost = float(result['ResultsByTime'][0]['Total']['UnblendedCost']['Amount'])
-
+    
+    print(f'previous month:{previous_month_cost}')
+    
     if today == month_end:
         month_end = month_end + timedelta(days=1)
 
@@ -54,25 +60,18 @@ def get_cost():
     )
 
     forecasted_cost = float(result['Total']['Amount'])
+    print(f'Forecasted cost: {forecasted_cost}')
 
     return previous_month_cost, forecasted_cost
 
 
-def post_message(cfg, msg):
+def post_message(msg, cfg):
 
     client = session.client(
         service_name='secretsmanager'
     )
 
-    try:
-        get_secret_value_response = client.get_secret_value(
-            SecretId=cfg.get('secret_name')
-        )
-    except ClientError as e:
-        raise e
-
-    secret = json.loads(get_secret_value_response['SecretString'])
-    webhook = WebhookClient(secret[cfg['slack_webhook_secret_key']])
+    webhook = WebhookClient(cfg['slack_webhook_url'])
     blocks = [{
             'type': 'section',
             'text': {
@@ -88,31 +87,31 @@ def post_message(cfg, msg):
             }
         }
     ]
-    
+    print(f'Sending to slack: {msg}')    
     response = webhook.send(text=msg, blocks=blocks)
 
 
 def lambda_handler(event, context):
-    
-    previous_month_cost, forecasted_cost = get_cost()
     cfg = get_config()
-    alert_threshold = cfg.get('alert_threshold')
+    print(f'CFG object:{str(cfg)}')
+    
+    print('Calculating cost')
+    previous_month_cost, forecasted_cost = get_cost()
+    alert_threshold = cfg['alert_threshold']
     
     percent = round(forecasted_cost / previous_month_cost * 100, 2)
-    hi_lo = 'HIGHER'
-
-    if percent > 100:
-        percent = percent -100
+    print(f'Calculated percent: {percent}%')
+    
+    msg = f"Your AWS cost for this month is forecasted to be {percent}% of the previous month"
+    
+    if cfg['alerts_only'].lower() == 'true' and percent > alert_threshold + 100:
+        print('Sending message in alert only mode')
+        post_message(msg, cfg)
+    elif cfg['alerts_only'].lower() == 'false':
+        print('Sending message in scheduled mode')
+        post_message(msg, cfg)
     else:
-        percent = 100 -percent
-        hi_lo = 'LOWER'
-    
-    msg = f"Your AWS cost for this month is forecasted to be {percent}% {hi_lo} than previous month"
-    
-    if cfg.get('alerts_only') and percent > 100 and percent > alert_threshold:
-        post_message(cfg, msg)
-    elif not cfg.get('alerts_only'):
-        post_message(cfg, msg)
+        print('None of the conditions were met. NO message was sent')
 
     
 if __name__ == '__main__':
