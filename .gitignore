@@ -1,4 +1,5 @@
 **/.terraform/*
 **/.terraform*
 **/__pycache__/*
+.idea/*
 TODO*

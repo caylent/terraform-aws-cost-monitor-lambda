@@ -1,5 +1,0 @@
-alert_threshold: 10
-secret_name: cost_control
-slack_webhook_secret_key: slack_webhook
-alerts_only: False #scheduled or alerts TODO:write code to validate entry and rise error if parameters are not right
-ecr_repo: 081291135487.dkr.ecr.us-east-1.amazonaws.com
