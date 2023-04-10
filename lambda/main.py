@@ -17,8 +17,13 @@ def get_config():
     """
     Gets configs from environment variables.
     """
+
+    client = session.client('secretsmanager')
+    get_secret_value_response = client.get_secret_value(SecretId=environ['webhook_secret_name'])
+    slack_webhook_url = get_secret_value_response['SecretString']
+
     return {'alerts_only': str(environ['alerts_only']), 
-            'slack_webhook_url': str(environ['slack_webhook_url']),
+            'slack_webhook_url': slack_webhook_url,
             'alert_threshold': float(environ['alert_threshold'])}
 
 
@@ -107,7 +112,6 @@ def lambda_handler(event, context):
     """
     # Get environment variables on each execution to allow hot updates to env vars
     cfg = get_config()
-    logger.info(f'CFG object:{str(cfg)}')
     
     logger.info('Calculating cost')
     previous_month_cost, forecasted_cost = get_cost()
