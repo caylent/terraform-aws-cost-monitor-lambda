@@ -6,9 +6,9 @@ resource "aws_lambda_function" "cost_alert" {
 
   environment {
     variables = {
-      "alert_threshold"   = var.alert_threshold
-      "slack_webhook_url" = data.aws_kms_secrets.secret_value.plaintext["slack_webhook_url"]
-      "alerts_only"       = var.alerts_only
+      "alert_threshold"     = var.alert_threshold
+      "alerts_only"         = var.alerts_only
+      "webhook_secret_name" = aws_secretsmanager_secret.secret.name # Do not change the key. It's used by the lambda
     }
   }
 }
@@ -47,7 +47,8 @@ data "aws_iam_policy_document" "inline_policy" {
       "ce:GetCostForecast",
       "logs:CreateLogGroup",
       "logs:CreateLogStream",
-      "logs:PutLogEvents"
+      "logs:PutLogEvents",
+      "secretsmanager:GetSecretValue"
     ]
     resources = ["*"]
   }
@@ -72,4 +73,12 @@ resource "aws_lambda_permission" "allow_events_bridge_to_run_lambda" {
   function_name = aws_lambda_function.cost_alert.function_name
   principal     = "events.amazonaws.com"
   source_arn    = aws_cloudwatch_event_rule.lambda_trigger.arn
+}
+
+resource "aws_secretsmanager_secret" "secret" {
+  name = "${var.name}-slack-webhook-url"
+}
+resource "aws_secretsmanager_secret_version" "secret_version" {
+  secret_id     = aws_secretsmanager_secret.secret.id
+  secret_string = data.aws_kms_secrets.secret_value.plaintext["slack_webhook_url"]
 }
