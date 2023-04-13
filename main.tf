@@ -1,28 +1,16 @@
 resource "aws_lambda_function" "cost_alert" {
-  function_name = var.name
-  role          = aws_iam_role.iam_for_lambda.arn
-  package_type  = "Image"
-  image_uri     = var.image_uri
-
+  function_name    = var.name
+  role             = aws_iam_role.iam_for_lambda.arn
+  filename         = local.lambda_package_file
+  handler          = "main.lambda_handler"
+  runtime          = "python3.9"
+  source_code_hash = data.local_file.deployment_package.content_base64sha256
   environment {
     variables = {
       "alert_threshold"     = var.alert_threshold
       "alerts_only"         = var.alerts_only
       "webhook_secret_name" = aws_secretsmanager_secret.secret.name # Do not change the key. It's used by the lambda
     }
-  }
-}
-
-data "aws_iam_policy_document" "assume_role" {
-  statement {
-    effect = "Allow"
-
-    principals {
-      type        = "Service"
-      identifiers = ["lambda.amazonaws.com"]
-    }
-
-    actions = ["sts:AssumeRole"]
   }
 }
 
@@ -34,23 +22,6 @@ resource "aws_iam_role" "iam_for_lambda" {
   inline_policy {
     name   = "read-only-cost-and-usage"
     policy = data.aws_iam_policy_document.inline_policy.json
-  }
-}
-
-data "aws_iam_policy_document" "inline_policy" {
-  statement {
-    actions = [
-      "ce:ListSavingsPlansPurchaseRecommendationGeneration",
-      "ce:ListCostAllocationTags",
-      "ce:GetCostAndUsage",
-      "ce:ListCostCategoryDefinitions",
-      "ce:GetCostForecast",
-      "logs:CreateLogGroup",
-      "logs:CreateLogStream",
-      "logs:PutLogEvents",
-      "secretsmanager:GetSecretValue"
-    ]
-    resources = ["*"]
   }
 }
 
