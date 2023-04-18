@@ -25,21 +25,39 @@ data "aws_iam_policy_document" "assume_role" {
 data "aws_iam_policy_document" "inline_policy" {
   statement {
     actions = [
+      "secretsmanager:GetSecretValue"
+    ]
+
+    resources = [
+      aws_secretsmanager_secret.secret.arn
+    ]
+  }
+
+  statement {
+    actions = [
       "ce:ListSavingsPlansPurchaseRecommendationGeneration",
       "ce:ListCostAllocationTags",
       "ce:GetCostAndUsage",
       "ce:ListCostCategoryDefinitions",
-      "ce:GetCostForecast",
+      "ce:GetCostForecast"
+    ]
+    resources = [
+      "arn:aws:ce:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:/GetCostAndUsage",
+      "arn:aws:ce:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:/GetCostForecast"
+    ]
+  }
+
+  statement {
+    actions = [
       "logs:CreateLogGroup",
       "logs:CreateLogStream",
-      "logs:PutLogEvents",
-      "secretsmanager:GetSecretValue"
+      "logs:PutLogEvents"
     ]
-    resources = [aws_secretsmanager_secret.secret.arn,
-      "arn:aws:ce:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:/GetCostAndUsage",
-      "arn:aws:ce:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:/GetCostForecast",
-    "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/*"]
+    resources = [
+      "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/*"
+    ]
   }
+
 }
 
 data "archive_file" "lambda_deployment_package" {
