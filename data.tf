@@ -2,10 +2,6 @@ data "aws_caller_identity" "current" {}
 
 data "aws_region" "current" {}
 
-data "local_file" "deployment_package" {
-  filename = local.lambda_package_file
-}
-
 data "aws_kms_secrets" "secret_value" {
   secret {
     name    = "slack_webhook_url"
@@ -44,4 +40,10 @@ data "aws_iam_policy_document" "inline_policy" {
       "arn:aws:ce:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:/GetCostForecast",
     "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/*"]
   }
+}
+
+data "archive_file" "lambda_deployment_package" {
+  type        = "zip"
+  output_path = local.lambda_package_file
+  source_dir  = "${path.module}/lambda/package/"
 }

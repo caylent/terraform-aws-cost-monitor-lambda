@@ -12,9 +12,8 @@ The function can be configured to report it's finding regularly (scheduled mode)
 `aws kms encrypt --key-id <id of CMK created in step 2> --plaintext fileb://plaintext-file --output text --query CiphertextBlob`
 
 4. Use the output of this command as a value for *encripted_slack_webhook_url*. The module will decript it, and store it as a secret in AWS Secrets Manager
-5. Manually create an ECR repo. Paste the repo URI in line 4 of /lambda/build.sh as the value for the *ECR_URI* variable.
-6. Run `/lambda/build.sh BOOTSTRAP`. By using this argument the script will build an image and push it to ECR. Grab the image URI and use it as value for *image_uri* in the Terraform module. The script can be run without the BOOTSTRAP argument to deploy new versions of the lambda code.
-7. Fill the rest of the module input parameters and run Terraform plan/apply
+5. Run `/lambda/build.py`.
+6. Fill the rest of the module input parameters and run Terraform plan/apply
 
 
 <!-- BEGIN_TF_DOCS -->

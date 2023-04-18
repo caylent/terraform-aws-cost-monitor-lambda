@@ -4,7 +4,7 @@ resource "aws_lambda_function" "cost_alert" {
   filename         = local.lambda_package_file
   handler          = "main.lambda_handler"
   runtime          = "python3.9"
-  source_code_hash = data.local_file.deployment_package.content_base64sha256
+  source_code_hash = data.archive_file.lambda_deployment_package.output_base64sha256
   environment {
     variables = {
       "alert_threshold"     = var.alert_threshold
