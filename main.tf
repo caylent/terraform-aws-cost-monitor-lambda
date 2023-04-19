@@ -1,7 +1,7 @@
 resource "aws_lambda_function" "cost_alert" {
   function_name    = var.name
   role             = aws_iam_role.iam_for_lambda.arn
-  filename         = local.lambda_package_file
+  filename         = data.archive_file.lambda_deployment_package.output_path
   handler          = "main.lambda_handler"
   runtime          = "python3.9"
   source_code_hash = data.archive_file.lambda_deployment_package.output_base64sha256
@@ -52,4 +52,12 @@ resource "aws_secretsmanager_secret" "secret" {
 resource "aws_secretsmanager_secret_version" "secret_version" {
   secret_id     = aws_secretsmanager_secret.secret.id
   secret_string = data.aws_kms_secrets.secret_value.plaintext["slack_webhook_url"]
+}
+
+resource "null_resource" "pip_installation" {
+    provisioner "local-exec" {
+        command = <<EOF
+        pip3 install --target lambda/ -r lambda/requirements.txt
+        EOF 
+    }
 }

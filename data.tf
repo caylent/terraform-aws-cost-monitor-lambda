@@ -61,7 +61,9 @@ data "aws_iam_policy_document" "inline_policy" {
 }
 
 data "archive_file" "lambda_deployment_package" {
+  depends_on = [null_resource.pip_installation]
   type        = "zip"
-  output_path = local.lambda_package_file
-  source_dir  = "${path.module}/lambda/package/"
+  source_dir = "${path.module}/lambda"
+  output_path = "${path.module}/cost_monitor.zip"
+  output_file_mode = "0666"
 }
