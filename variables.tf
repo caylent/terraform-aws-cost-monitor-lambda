@@ -7,7 +7,7 @@ variable "frequency" {
 variable "name" {
   description = "Name prefix to be applied to all resources"
   type        = string
-  default     = "cost_alert"
+  default     = "cost-alert"
 }
 
 variable "image_uri" {

@@ -3,3 +3,5 @@
 **/__pycache__/*
 .idea/*
 TODO*
+lambda/package/*
+*.zip
